@@ -1,0 +1,41 @@
+name: Directory bruteforce 
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '1.16.x'
+
+      - name: System initiation
+        run: sudo apt-get update --assume-yes && sudo apt-get install wget --assume-yes
+
+      - name: Install gobuster and ffuf 
+        run: |
+          go get -u github.com/ffuf/ffuf
+          go get -u github.com/OJ/gobuster
+
+      - name: Run Gobuster  
+        run: |
+          /home/runner/go/bin/gobuster -u https://www.yahoo.com/ -w dict.txt -o gobuster_bruteForce.txt -e 
+
+      - name: Run ffuf bruteforce  
+        run: |
+          /home/runner/go/bin/ffuf -c -H "X-Forwarded-For: 127.0.0.1" -H "User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:72.0) Gecko/20100101 Firefox/72.0" -u "https://www.yahoo.com/FUZZ" -w dict.txt -t 50 -D -e js,php,bak,txt,asp,aspx,jsp,html,zip,jar,sql,json,old,gz,shtml,log,swp,yaml,yml,config,save,rsa,ppk -ac -se -of result.json 
+
+
+      # github doesn't allow you to commit files > 100M
+      - name: Pruning files greater than 100MB
+        run: find . -size +99M -delete
+
+      - name: Commit and push
+        uses: stefanzweifel/git-auto-commit-action@v4.2.0
+        with:
+          commit_message: Commit output files
+          commit_user_name: 'Basic Shell'
+          commit_user_email: 'github-actions.shell@github.com'
